@@ -5,13 +5,17 @@ import torch.nn.functional as F
 import torch.optim as optim
 import time
 from data import getBatch
+from visulizer import Visualizer
+from samplers import uniform, mostLoss, leastLoss, distributeLoss, gradientNorm
+from api import logNetwork, logRun
 
+visualizer = Visualizer()
 
 n_epochs = 1
 batch_size_train = 1024
 mini_batch_size_train = 128
 batch_size_test = 1024
-learning_rate = 0.000005
+learning_rate = 0.005
 momentum = 0.5
 log_interval = 30
 
@@ -64,11 +68,19 @@ class Net(nn.Module):
 
       while index < NUMBER_OF_BATCHES:
         [data, target] = getBatch(batch_size_train)
-
         # [data, target] = uniform(data, target, mini_batch_size_train)
+        [data, target] = mostLoss(data, target, mini_batch_size_train, network)
+        # [data, target, importance] = gradientNorm(data, target, mini_batch_size_train, network)
 
         optimizer.zero_grad()
         output = network(data)
+        
+        targetPred = torch.argmax(output, dim=1)
+        visualizer.draw(data, targetPred)
+
+        # wait for 100ms
+        time.sleep(0.1)
+
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
@@ -77,6 +89,17 @@ class Net(nn.Module):
           acc = self.test()
           accPlot.append(acc)
           lossPlot.append(loss.item())
+
+          logRun(
+            [],
+            [],
+            accPlot,
+            [],
+            lossPlot,
+            'sandbox',
+            6,
+            'most loss',
+          )
           # plot(accPlot, None)
 
           # end time
@@ -132,6 +155,16 @@ test_losses = []
 accPlot = []
 lossPlot = []
 print('Starting training')
+
+# logNetwork(
+#   batch_size_train,
+#   batch_size_test,
+#   'sandbox',
+#   learning_rate,
+#   'adam',
+#   'cross entropy',
+#   'custom',
+# )
 
 
 for epoch in range(1, n_epochs + 1):
