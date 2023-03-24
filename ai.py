@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import time
 from data import getBatch
-from visulizer import Visualizer
+from visualizer import Visualizer
 from samplers import uniform, mostLoss, leastLoss, distributeLoss, gradientNorm
 from api import logNetwork, logRun
 
