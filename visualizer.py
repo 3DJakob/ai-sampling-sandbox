@@ -1,4 +1,5 @@
 import pygame
+import os
 
 # create pygame window
 # display circles in window from coordinates -1 to 1
@@ -7,6 +8,11 @@ class Visualizer:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("PyTorch Visualizer")
+
+        x = 100
+        y = 45
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (x,y)
+
         self.screen = pygame.display.set_mode((800, 800))
         self.data = None
         self.target = None
