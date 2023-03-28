@@ -20,6 +20,43 @@ def mostLoss (data, target, mini_batch_size, network):
       data = data[indexes]
       target = target[indexes]
       return data, target
+
+def mostLossEqualClasses (data, target, mini_batch_size, network):
+    with torch.no_grad():
+      # pick mini batch samples with most loss
+      output = network(data)
+      loss = F.cross_entropy(output, target, reduction='none')
+      indexes = torch.sort(loss, descending=True)[1]
+
+      numberOfSamplesPerClass = int(mini_batch_size / 2)
+      picked0 = 0
+      # picked1 = pickedTotal - picked0
+      pickedTotal = 0
+      i = 0
+
+      equalIndexes = []
+
+      while True:
+        if pickedTotal == mini_batch_size:
+          break
+
+        picked1 = pickedTotal - picked0
+        next = target[indexes[i]]
+
+        if next == 0 and picked0 <= numberOfSamplesPerClass:
+          picked0 += 1
+          pickedTotal += 1
+          equalIndexes.append(indexes[i])
+
+        if next == 1 and picked1 <= numberOfSamplesPerClass:
+          pickedTotal += 1
+          equalIndexes.append(indexes[i])
+
+        i += 1
+
+      data = data[equalIndexes]
+      target = target[equalIndexes]
+      return data, target
     
 def leastLoss (data, target, mini_batch_size, network):
     with torch.no_grad():
