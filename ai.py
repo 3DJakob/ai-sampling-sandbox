@@ -4,12 +4,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import time
-from data import getBatch
+from data import Batcher
 from visualizer import Visualizer
-from samplers import uniform, mostLoss, leastLoss, distributeLoss, gradientNorm
+from samplers import uniform, mostLoss, leastLoss, distributeLoss, gradientNorm, mostLossEqualClasses
 from api import logNetwork, logRun
+from varianceReductionCondition import VarianceReductionCondition 
 
-visualizer = Visualizer()
+reductionCondition = VarianceReductionCondition()
+batcher = Batcher()
 
 n_epochs = 1
 batch_size_train = 1024
@@ -62,13 +64,14 @@ class Net(nn.Module):
 
       # get first data sample in enumarate order from train loader
       batch_idx = 0
-      NUMBER_OF_BATCHES = 100
+      NUMBER_OF_BATCHES = 30 * 16
 
-      index = 0
-
-      while index < NUMBER_OF_BATCHES:
-        [data, target] = getBatch(batch_size_train)
-        # [data, target] = uniform(data, target, mini_batch_size_train)
+      while batch_idx < NUMBER_OF_BATCHES:
+        [data, target] = batcher.getBatch(batch_size_train)
+        uniformStart = time.time()
+        [data, target] = uniform(data, target, mini_batch_size_train)
+        uniformEnd = time.time()
+        importanceStart = time.time()
         [data, target] = mostLoss(data, target, mini_batch_size_train, network)
         # [data, target, importance] = gradientNorm(data, target, mini_batch_size_train, network)
 
@@ -76,7 +79,7 @@ class Net(nn.Module):
         output = network(data)
         
         targetPred = torch.argmax(output, dim=1)
-        visualizer.draw(data, targetPred)
+        batcher.draw(data, targetPred)
 
         # wait for 100ms
         time.sleep(0.1)
@@ -123,7 +126,7 @@ class Net(nn.Module):
 
 
         while batchIndex < NUMBER_OF_BATCHES:
-          [data, target] = getBatch(batch_size_test)
+          [data, target] = batcher.getBatch(batch_size_test)
 
 
         # for data, target in test_loader:
@@ -168,6 +171,7 @@ print('Starting training')
 
 
 for epoch in range(1, n_epochs + 1):
+  print('Epoch: ' + str(epoch))
   network.trainEpoch(epoch)
 
 # nodes = networkTo3dNodes(network, HEIGHT, WIDTH, CHANNELS)
