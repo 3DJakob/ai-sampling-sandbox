@@ -32,5 +32,21 @@ class Batcher:
         data = data.float()
         return [data, target]
 
-    def twoCircles(self, data):
+    def centerCircle(self, data):
         return data.pow(2).sum(1) < 0.62
+    
+    def centerSquare(self, data):
+        return torch.abs(data).sum(1) < 0.62
+    
+    def twoCircles(self, data):
+        sampleCount = data.shape[0]
+        # one cicle at (0.5, 0.5) and one at (-0.5, -0.5)
+        # offset tensor sampleCount x 2
+        offset = torch.zeros(sampleCount, 2, dtype=torch.float)
+        offset[:, 0] = 0.5
+        offset[:, 1] = 0.5
+
+        radius = 0.35
+
+        return torch.logical_or((data - offset).pow(2).sum(1) < radius, (data + offset).pow(2).sum(1) < radius)
+    
