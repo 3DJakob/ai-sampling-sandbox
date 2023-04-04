@@ -5,13 +5,21 @@ import torch.nn.functional as F
 import torch.optim as optim
 import time
 from data import Batcher
-from visualizer import Visualizer
-from samplers import uniform, mostLoss, leastLoss, distributeLoss, gradientNorm, mostLossEqualClasses
+from samplers.samplers import Sampler, uniform, mostLoss, leastLoss, gradientNorm
+# from samplers.samplers import uniform, mostLoss, leastLoss, distributeLoss, gradientNorm, mostLossEqualClasses
 from api import logNetwork, logRun
 from varianceReductionCondition import VarianceReductionCondition 
+from samplers.pickers import pickCdfSamples, pickOrderedSamples
 
 reductionCondition = VarianceReductionCondition()
 batcher = Batcher()
+sampler = Sampler()
+
+sampler.setSampler(gradientNorm)
+sampler.setPicker(pickOrderedSamples)
+RUNNUMBER = 13
+RUNNAME = 'gradientNorm'
+
 
 n_epochs = 1
 batch_size_train = 1024
@@ -19,7 +27,7 @@ mini_batch_size_train = 128
 batch_size_test = 1024
 learning_rate = 0.005
 momentum = 0.5
-log_interval = 30
+log_interval = 10
 
 # random_seed = 1
 random_seed = torch.randint(0, 100000, (1,)).item()
@@ -65,15 +73,28 @@ class Net(nn.Module):
       # get first data sample in enumarate order from train loader
       batch_idx = 0
       NUMBER_OF_BATCHES = 30 * 16
+      
+      currentTrainingTime = 0
 
       while batch_idx < NUMBER_OF_BATCHES:
+        start = time.time()
         [data, target] = batcher.getBatch(batch_size_train)
-        uniformStart = time.time()
-        [data, target] = uniform(data, target, mini_batch_size_train)
-        uniformEnd = time.time()
-        importanceStart = time.time()
-        [data, target] = mostLoss(data, target, mini_batch_size_train, network)
-        # [data, target, importance] = gradientNorm(data, target, mini_batch_size_train, network)
+        # [data, target] = mostLossEqualClasses(data, target, mini_batch_size_train, network)
+        # [data, target] = uniform(data, target, mini_batch_size_train)
+        # [data, target] = mostLoss(data, target, mini_batch_size_train, network)
+        [data, target] = sampler.sample(data, target, mini_batch_size_train, network)
+
+        # if batch_idx > 10:
+        #    [data, target] = mostLossEqualClasses(data, target, mini_batch_size_train, network)
+        # else:
+        #     [data, target] = uniform(data, target, mini_batch_size_train)
+        # [data, target] = mostLossEqualClasses(data, target, mini_batch_size_train, network)
+
+        # reductionCondition.update(importance)
+        # if reductionCondition.satisfied.item():
+        #    print('Variance reduction condition satisfied')
+
+
 
         optimizer.zero_grad()
         output = network(data)
@@ -81,32 +102,35 @@ class Net(nn.Module):
         targetPred = torch.argmax(output, dim=1)
         batcher.draw(data, targetPred)
 
-        # wait for 100ms
-        time.sleep(0.1)
-
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
+
+        duration = time.time() - start
+        currentTrainingTime += duration
+
+        # wait for 100ms
+        # time.sleep(0.1)
         
         if batch_idx % log_interval == 0:
           acc = self.test()
           accPlot.append(acc)
           lossPlot.append(loss.item())
+          lastTimestamp = timestampPlot.__len__() > 0 and timestampPlot[-1] or 0
+          timestampPlot.append(lastTimestamp + currentTrainingTime)
+          # timestampPlot.append(currentTrainingTime)
+          currentTrainingTime = 0
 
           logRun(
-            [],
+            timestampPlot,
             [],
             accPlot,
             [],
             lossPlot,
-            'sandbox',
-            6,
-            'most loss',
+            'sandbox - 2 circles',
+            RUNNUMBER,
+            RUNNAME,
           )
-          # plot(accPlot, None)
-
-          # end time
-          end = time.time()
 
           train_losses.append(loss.item())
       
@@ -157,12 +181,13 @@ test_losses = []
 
 accPlot = []
 lossPlot = []
+timestampPlot = []
 print('Starting training')
 
 # logNetwork(
 #   batch_size_train,
 #   batch_size_test,
-#   'sandbox',
+#   'sandbox - 2 circles',
 #   learning_rate,
 #   'adam',
 #   'cross entropy',
