@@ -70,7 +70,7 @@ def compute_grad(sample, target, model, loss_fn, use_last_layer_grad=False):
   return torch.autograd.grad(loss, model.parameters(), create_graph=True)[0].norm(2).item()
 
 def gradientNorm (data, target, network):
-  grads = [compute_grad(data[i], target[i], network, F.cross_entropy) for i in range(data.shape[0])]
+  grads = [compute_grad(data[i], target[i], network, F.cross_entropy, True) for i in range(data.shape[0])]
   # list to torch tensor
   importance = torch.FloatTensor(grads)
   return importance
