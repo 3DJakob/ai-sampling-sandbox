@@ -50,3 +50,27 @@ class Batcher:
 
         return torch.logical_or((data - offset).pow(2).sum(1) < radius, (data + offset).pow(2).sum(1) < radius)
     
+    def twoArchs(self, data):
+        sampleCount = data.shape[0]
+
+        offsetX = 0.1
+        offsetY = 0.25
+
+        arch1 = generate_half_arch(data, -offsetX, offsetY, flipped=True)
+        arch2 = generate_half_arch(data, offsetX, -offsetY, flipped=False)
+
+        return torch.logical_or(arch1, arch2)
+
+def generate_half_arch(data, offsetX, offsetY, flipped=False):
+    offset = torch.zeros_like(data)
+    offset[:,0] = offsetX
+    offset[:,1] = offsetY
+    
+    outer_circle = (data - offset).pow(2).sum(1) <= 0.25
+
+    inner_circle = (data - offset).pow(2).sum(1) >= 0.1
+
+    doughnut = torch.logical_and(outer_circle, inner_circle)
+
+    half_arch = torch.logical_and(doughnut, (data[:, 0] <= 0 + offsetX) ^ flipped)
+    return half_arch
