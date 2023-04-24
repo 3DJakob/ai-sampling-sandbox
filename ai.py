@@ -17,13 +17,16 @@ sampler = Sampler()
 
 sampler.setSampler(uniform)
 sampler.setPicker(pickOrderedSamples)
+
+
+# Variables to be set by the user
 RUNNUMBER = 41
 RUNNAME = 'gradient norm 0.28 threshold'
-
 TIMELIMIT = 30
+SAMPLINGTHRESHOLD = 0.28
+IMPORTANCESAMPLER = gradientNorm
+NUMBEROFRUNS = 1
 
-
-n_epochs = 1
 batch_size_train = 1024
 mini_batch_size_train = 128
 batch_size_test = 1024
@@ -31,8 +34,6 @@ learning_rate = 0.005
 momentum = 0.5
 log_interval = 10
 api_interval = 100
-
-SAMPLINGTHRESHOLD = 0.28
 
 # random_seed = 1
 random_seed = torch.randint(0, 100000, (1,)).item()
@@ -179,7 +180,7 @@ class Net(nn.Module):
 
       if self.initialLoss * SAMPLINGTHRESHOLD > test_loss:
         print('Sampling threshold reached')
-        sampler.setSampler(gradientNorm)
+        sampler.setSampler(IMPORTANCESAMPLER)
       
       print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, total,
@@ -222,7 +223,7 @@ print('Starting training')
 # )
 
 
-for epoch in range(1, n_epochs + 1):
+for epoch in range(1, NUMBEROFRUNS + 1):
   print('Epoch: ' + str(epoch))
   network.trainEpoch(epoch)
   network.reset()
