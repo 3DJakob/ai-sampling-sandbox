@@ -24,7 +24,7 @@ NETWORKNAME = 'sandbox - 2 circles threshold testing'
 RUNNUMBER = 0
 TIMELIMIT = 30
 SAMPLINGTHRESHOLD = 0.28
-RUNNAME = 'gradient norm ' + SAMPLINGTHRESHOLD + ' threshold'
+RUNNAME = 'gradient norm %f threshold' % SAMPLINGTHRESHOLD
 IMPORTANCESAMPLER = gradientNorm
 NUMBEROFRUNS = 5
 
