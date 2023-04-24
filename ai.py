@@ -20,6 +20,7 @@ sampler.setPicker(pickOrderedSamples)
 
 
 # Variables to be set by the user
+NETWORKNAME = 'sandbox - 2 circles results2'
 RUNNUMBER = 41
 RUNNAME = 'gradient norm 0.28 threshold'
 TIMELIMIT = 30
@@ -100,7 +101,7 @@ class Net(nn.Module):
             self.accPlot,
             [],
             self.lossPlot,
-            'sandbox - 2 circles results2',
+            NETWORKNAME,
             RUNNUMBER,
             RUNNAME,
           )
@@ -215,7 +216,7 @@ print('Starting training')
 # logNetwork(
 #   batch_size_train,
 #   batch_size_test,
-#   'sandbox - 2 circles results2',
+#   NETWORKNAME,
 #   learning_rate,
 #   'adam',
 #   'cross entropy',
