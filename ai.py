@@ -15,10 +15,12 @@ reductionCondition = VarianceReductionCondition()
 batcher = Batcher()
 sampler = Sampler()
 
-sampler.setSampler(gradientNorm)
+sampler.setSampler(uniform)
 sampler.setPicker(pickOrderedSamples)
-RUNNUMBER = 13
-RUNNAME = 'gradientNorm'
+RUNNUMBER = 41
+RUNNAME = 'gradient norm 0.28 threshold'
+
+TIMELIMIT = 30
 
 
 n_epochs = 1
@@ -28,6 +30,9 @@ batch_size_test = 1024
 learning_rate = 0.005
 momentum = 0.5
 log_interval = 10
+api_interval = 100
+
+SAMPLINGTHRESHOLD = 0.28
 
 # random_seed = 1
 random_seed = torch.randint(0, 100000, (1,)).item()
@@ -45,6 +50,13 @@ class Net(nn.Module):
         print('Linear size: ' + str(self.linearSize))
         self.fc1 = nn.Linear(self.linearSize, 50)
         self.fc2 = nn.Linear(50, 2)
+        self.currentTrainingTime = 0
+        self.initialLoss = 0
+
+        # Plotting
+        self.lossPlot = []
+        self.accPlot = []
+        self.timestampPlot = []
         
     def getLinearSize (self):
       testMat = torch.zeros(1, 2)
@@ -72,11 +84,30 @@ class Net(nn.Module):
 
       # get first data sample in enumarate order from train loader
       batch_idx = 0
-      NUMBER_OF_BATCHES = 30 * 16
-      
-      currentTrainingTime = 0
 
-      while batch_idx < NUMBER_OF_BATCHES:
+      while self.currentTrainingTime < TIMELIMIT:
+        if batch_idx % log_interval == 0:
+          acc, loss = self.test()
+          self.accPlot.append(acc)
+          self.lossPlot.append(loss)
+          self.timestampPlot.append(self.currentTrainingTime)
+
+        if batch_idx % api_interval == 0:
+          logRun(
+            self.timestampPlot,
+            [],
+            self.accPlot,
+            [],
+            self.lossPlot,
+            'sandbox - 2 circles results2',
+            RUNNUMBER,
+            RUNNAME,
+          )
+
+        # if batch_idx == 80:
+        #   # turn on importance sampling
+        #   sampler.setSampler(gradientNorm)
+
         start = time.time()
         [data, target] = batcher.getBatch(batch_size_train)
         # [data, target] = mostLossEqualClasses(data, target, mini_batch_size_train, network)
@@ -102,37 +133,15 @@ class Net(nn.Module):
         targetPred = torch.argmax(output, dim=1)
         batcher.draw(data, targetPred)
 
-        loss = F.cross_entropy(output, target)
-        loss.backward()
+        trainLoss = F.cross_entropy(output, target)
+        trainLoss.backward()
         optimizer.step()
 
-        duration = time.time() - start
-        currentTrainingTime += duration
+        self.currentTrainingTime += time.time() - start
 
         # wait for 100ms
         # time.sleep(0.1)
         
-        if batch_idx % log_interval == 0:
-          acc = self.test()
-          accPlot.append(acc)
-          lossPlot.append(loss.item())
-          lastTimestamp = timestampPlot.__len__() > 0 and timestampPlot[-1] or 0
-          timestampPlot.append(lastTimestamp + currentTrainingTime)
-          # timestampPlot.append(currentTrainingTime)
-          currentTrainingTime = 0
-
-          logRun(
-            timestampPlot,
-            [],
-            accPlot,
-            [],
-            lossPlot,
-            'sandbox - 2 circles',
-            RUNNUMBER,
-            RUNNAME,
-          )
-
-          train_losses.append(loss.item())
       
         batch_idx += 1
 
@@ -165,11 +174,32 @@ class Net(nn.Module):
 
       test_loss /= total
       test_losses.append(test_loss)
+      if self.initialLoss == 0:
+        self.initialLoss = test_loss
+
+      if self.initialLoss * SAMPLINGTHRESHOLD > test_loss:
+        print('Sampling threshold reached')
+        sampler.setSampler(gradientNorm)
+      
       print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, total,
         100. * correct / total))
       accTensor = correct / total
-      return accTensor.item()
+      return accTensor.item(), test_loss
+    
+    def reset(self):
+      self.currentTrainingTime = 0
+      # reset weights
+      self.fc1.reset_parameters()
+      self.fc2.reset_parameters()
+
+      self.accPlot = []
+      self.lossPlot = []
+      self.timestampPlot = []
+      
+      global RUNNUMBER
+      RUNNUMBER = RUNNUMBER + 1
+      
 
 network = Net()
 # optimizer = optim.SGD(network.parameters(), lr=learning_rate, momentum=momentum)
@@ -179,15 +209,12 @@ train_losses = []
 train_counter = []
 test_losses = []
 
-accPlot = []
-lossPlot = []
-timestampPlot = []
 print('Starting training')
 
 # logNetwork(
 #   batch_size_train,
 #   batch_size_test,
-#   'sandbox - 2 circles',
+#   'sandbox - 2 circles results2',
 #   learning_rate,
 #   'adam',
 #   'cross entropy',
@@ -198,6 +225,7 @@ print('Starting training')
 for epoch in range(1, n_epochs + 1):
   print('Epoch: ' + str(epoch))
   network.trainEpoch(epoch)
+  network.reset()
 
 # nodes = networkTo3dNodes(network, HEIGHT, WIDTH, CHANNELS)
 # log3DNodes(nodes, 'camyleon - mini')
