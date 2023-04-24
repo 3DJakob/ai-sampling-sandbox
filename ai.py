@@ -54,6 +54,7 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(50, 2)
         self.currentTrainingTime = 0
         self.initialLoss = 0
+        self.importanceSamplingToggleIndex = 0
 
         # Plotting
         self.lossPlot = []
@@ -104,6 +105,7 @@ class Net(nn.Module):
             NETWORKNAME,
             RUNNUMBER,
             RUNNAME,
+            self.importanceSamplingToggleIndex
           )
 
         # if batch_idx == 80:
@@ -182,6 +184,7 @@ class Net(nn.Module):
       if self.initialLoss * SAMPLINGTHRESHOLD > test_loss:
         print('Sampling threshold reached')
         sampler.setSampler(IMPORTANCESAMPLER)
+        self.importanceSamplingToggleIndex = len(self.lossPlot)
       
       print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, total,
