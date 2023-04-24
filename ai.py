@@ -20,13 +20,13 @@ sampler.setPicker(pickOrderedSamples)
 
 
 # Variables to be set by the user
-NETWORKNAME = 'sandbox - 2 circles results2'
-RUNNUMBER = 41
-RUNNAME = 'gradient norm 0.28 threshold'
+NETWORKNAME = 'sandbox - 2 circles threshold testing'
+RUNNUMBER = 0
 TIMELIMIT = 30
 SAMPLINGTHRESHOLD = 0.28
+RUNNAME = 'gradient norm ' + SAMPLINGTHRESHOLD + ' threshold'
 IMPORTANCESAMPLER = gradientNorm
-NUMBEROFRUNS = 1
+NUMBEROFRUNS = 5
 
 batch_size_train = 1024
 mini_batch_size_train = 128
