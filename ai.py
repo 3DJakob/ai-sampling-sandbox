@@ -201,6 +201,8 @@ class Net(nn.Module):
       self.accPlot = []
       self.lossPlot = []
       self.timestampPlot = []
+      self.initialLoss = 0
+      self.importanceSamplingToggleIndex = 0
       
       global RUNNUMBER
       RUNNUMBER = RUNNUMBER + 1
