@@ -148,6 +148,19 @@ class Net(nn.Module):
         
       
         batch_idx += 1
+      
+      # Times up log what we have
+      logRun(
+        self.timestampPlot,
+        [],
+        self.accPlot,
+        [],
+        self.lossPlot,
+        NETWORKNAME,
+        RUNNUMBER,
+        RUNNAME,
+        self.importanceSamplingToggleIndex
+      )
 
       
 
