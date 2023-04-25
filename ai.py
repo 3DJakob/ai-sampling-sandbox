@@ -15,18 +15,18 @@ reductionCondition = VarianceReductionCondition()
 batcher = Batcher()
 sampler = Sampler()
 
-sampler.setSampler(uniform)
-sampler.setPicker(pickOrderedSamples)
-
-
 # Variables to be set by the user
 NETWORKNAME = 'sandbox - 2 circles threshold testing'
 RUNNUMBER = 0
 TIMELIMIT = 30
 SAMPLINGTHRESHOLD = 0.28
 RUNNAME = 'gradient norm %f threshold' % SAMPLINGTHRESHOLD
+STARTINGSAMPLER = uniform
 IMPORTANCESAMPLER = gradientNorm
 NUMBEROFRUNS = 5
+
+sampler.setSampler(STARTINGSAMPLER)
+sampler.setPicker(pickOrderedSamples)
 
 batch_size_train = 1024
 mini_batch_size_train = 128
@@ -203,6 +203,7 @@ class Net(nn.Module):
       self.timestampPlot = []
       self.initialLoss = 0
       self.importanceSamplingToggleIndex = 0
+      sampler.setSampler(STARTINGSAMPLER)
       
       global RUNNUMBER
       RUNNUMBER = RUNNUMBER + 1
