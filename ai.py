@@ -24,6 +24,7 @@ RUNNAME = 'gradient norm %f threshold' % SAMPLINGTHRESHOLD
 STARTINGSAMPLER = uniform
 IMPORTANCESAMPLER = gradientNorm
 NUMBEROFRUNS = 5
+WARMUPRUNS = 10
 
 sampler.setSampler(STARTINGSAMPLER)
 sampler.setPicker(pickOrderedSamples)
@@ -199,9 +200,9 @@ class Net(nn.Module):
         sampler.setSampler(IMPORTANCESAMPLER)
         self.importanceSamplingToggleIndex = len(self.lossPlot)
       
-      print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, total,
-        100. * correct / total))
+      # print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+      #   test_loss, correct, total,
+      #   100. * correct / total))
       accTensor = correct / total
       return accTensor.item(), test_loss
     
@@ -219,7 +220,12 @@ class Net(nn.Module):
       sampler.setSampler(STARTINGSAMPLER)
       
       global RUNNUMBER
-      RUNNUMBER = RUNNUMBER + 1
+      global WARMUPRUNS
+
+      if (WARMUPRUNS > 0):
+        WARMUPRUNS = WARMUPRUNS - 1
+      else:
+        RUNNUMBER = RUNNUMBER + 1
       
 
 network = Net()
@@ -243,7 +249,7 @@ print('Starting training')
 # )
 
 
-for epoch in range(1, NUMBEROFRUNS + 1):
+for epoch in range(1, NUMBEROFRUNS + WARMUPRUNS + 1):
   print('Epoch: ' + str(epoch))
   network.trainEpoch(epoch)
   network.reset()
