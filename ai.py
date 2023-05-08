@@ -16,15 +16,15 @@ batcher = Batcher()
 sampler = Sampler()
 
 # Variables to be set by the user
-NETWORKNAME = 'sandbox - 2 circles threshold testing'
-RUNNUMBER = 0
+NETWORKNAME = 'sandbox - 2 circles threshold testing 2'
+RUNNUMBER = 20
 TIMELIMIT = 30
-SAMPLINGTHRESHOLD = 0.28
+SAMPLINGTHRESHOLD = 0.66
 RUNNAME = 'gradient norm %f threshold' % SAMPLINGTHRESHOLD
 STARTINGSAMPLER = uniform
 IMPORTANCESAMPLER = gradientNorm
-NUMBEROFRUNS = 5
-WARMUPRUNS = 10
+NUMBEROFRUNS = 20
+WARMUPRUNS = 0
 
 sampler.setSampler(STARTINGSAMPLER)
 sampler.setPicker(pickOrderedSamples)
@@ -198,7 +198,8 @@ class Net(nn.Module):
       if self.initialLoss * SAMPLINGTHRESHOLD > test_loss:
         print('Sampling threshold reached')
         sampler.setSampler(IMPORTANCESAMPLER)
-        self.importanceSamplingToggleIndex = len(self.lossPlot)
+        if self.importanceSamplingToggleIndex == 0:
+          self.importanceSamplingToggleIndex = len(self.lossPlot)
       
       # print('\nTest set: Avg. loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
       #   test_loss, correct, total,
